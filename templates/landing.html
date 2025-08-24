@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ML Plant Disease Detection</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+<style>
+  /* Reset */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8faf7;
+    color: #2c3e21;
+    line-height: 1.6;
+  }
+
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  /* Header */
+  header {
+    background-color: #35632d;
+    color: white;
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+  }
+  .logo img {
+    height: 48px;
+    margin-right: 10px;
+  }
+  .logo h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+  }
+
+  nav {
+    display: flex;
+    gap: 25px;
+  }
+
+  nav a {
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 6px 12px;
+    border-radius: 6px;
+    transition: background-color 0.3s ease;
+  }
+
+  nav a:hover,
+  nav a:focus {
+    background-color: #4e874a;
+    color: #e6f4d4;
+    outline: none;
+  }
+
+  nav a.active {
+    background-color: #4e874a;
+    color: #e6f4d4;
+  }
+
+  /* Hero Section */
+  .hero {
+    position: relative;
+    background-image: url('https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260');
+    background-size: cover;
+    background-position: center;
+    height: 75vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: white;
+  }
+
+  .hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(53, 99, 45, 0.7);
+    z-index: 0;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    padding: 0 20px;
+    transform: translateY(20px);
+    opacity: 0;
+    animation: fadeInUp 0.8s ease-out forwards;
+  }
+
+  .hero h2 {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 6px rgba(0,0,0,0.6);
+  }
+
+  .hero p {
+    font-size: 1.3rem;
+    font-weight: 500;
+    margin-bottom: 30px;
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.5);
+  }
+
+  .btn-cta {
+    background-color: #ff9800;
+    color: white;
+    padding: 14px 36px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 36px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 6px 12px rgba(255, 152, 0, 0.5);
+  }
+  .btn-cta:hover,
+  .btn-cta:focus {
+    background-color: #e37400;
+    transform: scale(1.05);
+    outline: none;
+  }
+
+  /* Main content */
+  main {
+    max-width: 1100px;
+    margin: 60px auto 80px;
+    padding: 0 20px;
+  }
+
+  section {
+    margin-bottom: 60px;
+  }
+
+  h3.section-title {
+    font-size: 2.2rem;
+    text-align: center;
+    color: #35632d;
+    margin-bottom: 36px;
+    font-weight: 800;
+    letter-spacing: 1px;
+  }
+
+  /* Features */
+  .features-grid {
+    display: flex;
+    justify-content: space-around;
+    gap: 30px;
+    flex-wrap: wrap;
+  }
+
+  .feature {
+    background: white;
+    flex: 1 1 260px;
+    max-width: 300px;
+    border-radius: 14px;
+    padding: 30px 25px;
+    box-shadow: 0 10px 20px rgb(53 99 45 / 0.12);
+    text-align: center;
+    transition: transform 0.3s ease;
+  }
+  .feature:hover {
+    transform: translateY(-8px);
+  }
+
+  .feature-icon {
+    font-size: 48px;
+    color: #4caf50;
+    margin-bottom: 18px;
+  }
+
+  .feature h4 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+  }
+  
+  .feature p {
+    font-size: 1rem;
+    color: #4a4a4a;
+  }
+
+  /* How It Works */
+  .how-it-works {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .how-it-works-content {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .how-text {
+    flex: 1 1 400px;
+    font-size: 1.1rem;
+    color: #3c3c3c;
+    line-height: 1.6;
+  }
+
+  .how-image {
+    flex: 1 1 400px;
+    max-width: 450px;
+    border-radius: 14px;
+    box-shadow: 0 12px 24px rgb(53 99 45 / 0.20);
+    overflow: hidden;
+  }
+
+  .how-image img {
+    width: 100%;
+    display: block;
+    object-fit: cover;
+  }
+
+  /* Footer */
+  footer {
+    background-color: #2d421e;
+    color: #cbe97e;
+    text-align: center;
+    padding: 28px 15px;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  footer a {
+    color: #f8fbe9;
+    margin: 0 12px;
+    font-size: 1.3rem;
+    vertical-align: middle;
+    transition: color 0.3s ease;
+  }
+
+  footer a:hover,
+  footer a:focus {
+    color: #ffb347;
+    outline: none;
+  }
+
+  /* Animations */
+  @keyframes fadeInUp {
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  /* Responsive */
+  @media (max-width: 960px) {
+    .how-it-works-content {
+      flex-direction: column;
+    }
+    .how-image, .how-text {
+      flex: 1 1 100%;
+      max-width: 100%;
+    }
+    .feature {
+      max-width: 100%;
+    }
+  }
+
+  @media (max-width: 480px) {
+    header {
+      flex-direction: column;
+      gap: 15px;
+      padding: 20px;
+    }
+    nav {
+      justify-content: center;
+    }
+    .hero h2 {
+      font-size: 2rem;
+    }
+    .hero p {
+      font-size: 1rem;
+      margin-bottom: 20px;
+    }
+    .btn-cta {
+      font-size: 1.1rem;
+      padding: 12px 28px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header role="banner">
+  <div class="logo">
+    <a href="/">
+      <img src="https://media-hosting.imagekit.io/28f24fe2ed7e41b4/plant_ai-removebg-preview.png?Expires=1840454328&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=lI5xWwi5AqwJEHAvOCIK8H~NEQk4fvjLwewlFhKmiNJ8Bfst~Q0YaO1HyFu9nU-s7xJzu~6IdcVm4~NTyQ0Ox8Im5y4m73WLusMC5WnvxUaG5Cx9lebGQJV0rrpRcXxKBPjEnaSiq1IAJOOiIresfRoa0vnra3lDgUbNyAbFUdW5NdNKtzlvzvi6tqtWsOH0GVZM-wf7RHLmdBCmbaGZo~i~BLJKLP6E6K5QywykoYA~zWrNxyA-4MQb6Ps7lI3ZZrRMW2KTm4F~pjKOS9WWTFmO70~RYMThCm~ahDjduG1bPtj46jSgZFW-~6TZ4iYuc9HKUFg0M1j34R2457vG9g__" alt="Plant Disease Detector Logo" />
+    </a>
+  </div>
+  <nav role="navigation" aria-label="Primary navigation">
+    <a href="/" class="active">Home</a>
+    <a href="/detector">Detector</a>
+    <a href="/detector#ai-assistance">AI Assistance</a>
+    <a href="#contact">Contact</a>
+  </nav>
+</header>
+
+<section class="hero" role="img" aria-label="Healthy plant leaves background image">
+  <div class="hero-content">
+    <h2>Detect Plant Diseases Instantly With ML</h2>
+    <p>Leverage artificial intelligence for fast and accurate plant disease detection from images.</p>
+    <button class="btn-cta" aria-label="Try the plant disease detector now" onclick="window.location.href='/detector'">Try It Now</button>
+  </div>
+</section>
+
+<main role="main">
+
+  <section class="features" id="features">
+    <h3 class="section-title">Features</h3>
+    <div class="features-grid" role="list">
+      <article class="feature" role="listitem">
+        <i class="fas fa-microscope feature-icon" aria-hidden="true"></i>
+        <h4>AI-Powered Detection</h4>
+        <p>Detect 50+ plant diseases using state-of-the-art machine learning algorithms.</p>
+      </article>
+      <article class="feature" role="listitem">
+        <i class="fas fa-camera feature-icon" aria-hidden="true"></i>
+        <h4>Easy Image Upload</h4>
+        <p>Simply upload a photo of your plant leaf to get instant analysis.</p>
+      </article>
+      <article class="feature" role="listitem">
+        <i class="fas fa-seedling feature-icon" aria-hidden="true"></i>
+        <h4>Treatment Tips</h4>
+        <p>Receive personalized tips and guidance for disease treatment and prevention.</p>
+      </article>
+      <article class="feature" role="listitem">
+        <i class="fas fa-mobile-alt feature-icon" aria-hidden="true"></i>
+        <h4>Mobile Friendly</h4>
+        <p>Responsive design works perfectly on mobile phones and tablets.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="how-it-works" id="how-it-works" aria-labelledby="how-it-works-title">
+    <h3 id="how-it-works-title" class="section-title">How It Works</h3>
+    <div class="how-it-works-content">
+      <div class="how-text">
+        <p>Upload a clear image of the plant leaf affected by disease. Our machine learning model analyzes the image locally or on server to identify possible diseases based on leaf color, texture, and spots. You will promptly receive a diagnostic result with confidence level and specific treatment advice.</p>
+        <p>Our AI has been trained using thousands of high-quality labeled images from various agricultural datasets to ensure reliable detection for multiple plant species and common diseases.</p>
+      </div>
+      <div class="how-image">
+        <img src="https://img.freepik.com/premium-photo/handsome-hipster-modern-man_20279-8241.jpg" alt="Person uploading a plant image on a smartphone" />
+      </div>
+    </div>
+  </section>
+
+  <section id="contact" style="text-align:center;">
+    <h3 class="section-title">Get in Touch</h3>
+    <p style="max-width: 600px; margin: 0 auto 20px;">Questions or feedback? We'd love to hear from you! Reach out via email or follow us on social media.</p>
+    <p>
+      <a href="mailto:contact@plantdetectai.com" style="color:#35632d; font-weight:700;">contact@plantdetectai.com</a>
+    </p>
+  </section>
+
+</main>
+
+<footer>
+  <p>
+    © 2025 Plant Detect AI
+  </p>
+  <p>
+    <a href="#" target="_blank" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+    <a href="#" target="_blank" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+    <a href="#" target="_blank" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+  </p>
+</footer>
+
+</body>
+</html>

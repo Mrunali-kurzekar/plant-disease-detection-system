@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Disease Detector</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts (Poppins) -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        body {
+            background: linear-gradient(135deg, #2a2a4e 0%, #1e2a5e 100%);
+            color: #e0e0e0;
+            font-family: 'Poppins', 'Inter', 'Segoe UI', Arial, sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+            transition: background 0.3s ease, transform 0.3s ease;
+        }
+        header.scrolled {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .logo-container {
+            position: absolute;
+            top: 50%;
+            left: 20px;
+            transform: translateY(-50%);
+            z-index: 1001;
+        }
+        .logo-container img {
+            width: 150px;
+            height: auto;
+            filter: hue-rotate(145deg) saturate(1.8) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+            transition: transform 0.3s ease;
+        }
+        .logo-container img:hover {
+            transform: scale(1.1);
+        }
+        .navbar {
+            width: 100%;
+            padding: 8px 20px;
+            padding-left: 180px;
+            min-height: 60px;
+        }
+        .navbar-brand {
+            min-width: 150px;
+        }
+        .navbar-nav .nav-link {
+            color: #e0e0e0;
+            font-weight: 500;
+            margin-left: 12px;
+            padding: 2px 5px;
+            transition: color 0.3s ease, transform 0.3s ease;
+            position: relative;
+        }
+        .navbar-nav .nav-link:hover {
+            color: #2db55d;
+            transform: scale(1.05);
+        }
+        .navbar-nav .nav-link.active {
+            color: #2db55d;
+            border-bottom: 2px solid #2db55d;
+        }
+        .navbar-nav .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -2px;
+            left: 0;
+            background-color: #2db55d;
+            transition: width 0.3s ease;
+        }
+        .navbar-nav .nav-link:hover::after {
+            width: 100%;
+        }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+        .main-container, .ai-assistance-section {
+            width: 100%;
+            margin: 0;
+            display: flex;
+            padding: 15px;
+            flex: 1;
+            padding-top: 80px;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .main-container.hidden, .ai-assistance-section.hidden {
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
+        }
+        .ai-assistance-section {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .left-section, .right-section, .ai-assistance-content {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            transition: transform 0.5s ease, opacity 0.5s ease;
+        }
+        .left-section {
+            width: 30%;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            max-height: 80vh;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1);
+        }
+        .left-section::-webkit-scrollbar {
+            width: 8px;
+        }
+        .left-section::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        .left-section::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+        .left-section::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        .right-section {
+            width: 70%;
+            display: flex;
+            flex-direction: column;
+        }
+        .ai-assistance-content {
+            width: 100%;
+            padding: 30px 20px;
+            text-align: center;
+            transform: translateY(20px);
+            opacity: 0;
+            animation: slideIn 0.6s ease-out forwards;
+        }
+        @keyframes slideIn {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        h4 {
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 1.8rem;
+            letter-spacing: 0.5px;
+            margin-bottom: 20px;
+        }
+        .plant-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .plant-card {
+            position: relative;
+            height: 120px;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transform: translateY(20px);
+            opacity: 0;
+            animation: cardSlideIn 0.5s ease-out forwards;
+            animation-delay: calc(0.1s * var(--index));
+        }
+        @keyframes cardSlideIn {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        .plant-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 16px rgba(45, 181, 93, 0.3);
+        }
+        .plant-card.selected {
+            border: 2px solid #2db55d;
+            box-shadow: 0 0 10px rgba(45, 181, 93, 0.5);
+        }
+        .plant-card-apple {
+            background-image: url('https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=300');
+        }
+        .plant-card-cherry {
+            background-image: url('https://images.unsplash.com/photo-1611096265583-5d745206f2a0?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTh8fGNoZXJyeXxlbnwwfHwwfHx8MA%3D%3D');
+        }
+        .plant-card-corn {
+            background-image: url('https://images.unsplash.com/photo-1634467524884-897d0af5e104?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8Y29ybnxlbnwwfHwwfHx8MA%3D%3D');
+        }
+        .plant-card-grape {
+            background-image: url('https://images.pexels.com/photos/708777/pexels-photo-708777.jpeg?w=300');
+        }
+        .plant-card-peach {
+            background-image: url('https://images.unsplash.com/photo-1570978561297-793391262fea?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8cGVhY2h8ZW58MHx8MHx8fDA%3D');
+        }
+        .plant-card-pepper {
+            background-image: url('https://images.unsplash.com/photo-1608737637507-9aaeb9f4bf30?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTZ8fHBlcHBlcnxlbnwwfHwwfHx8MA%3D%3D');
+        }
+        .plant-card-potato {
+            background-image: url('https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=300');
+        }
+        .plant-card-strawberry {
+            background-image: url('https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=300');
+        }
+        .plant-card-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            color: #e0e0e0;
+            padding: 6px;
+            border-bottom-left-radius: 7px;
+            border-bottom-right-radius: 7px;
+            text-align: center;
+        }
+        .plant-card-overlay h5 {
+            margin: 0;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .plant-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .form-control, .ai-input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #e0e0e0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .form-control:focus, .ai-input:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #2db55d;
+            color: #e0e0e0;
+            box-shadow: 0 0 8px rgba(45, 181, 93, 0.3);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #2db55d, #259b4a);
+            border: none;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #259b4a, #218838);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(45, 181, 93, 0.4);
+        }
+        .alert {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #e0e0e0;
+            transition: opacity 0.5s ease;
+        }
+        .alert-success {
+            background: rgba(45, 181, 93, 0.2);
+            animation: fadeIn 0.5s ease-in;
+        }
+        .alert-danger {
+            background: rgba(220, 53, 69, 0.2);
+        }
+        .alert-info {
+            background: rgba(0, 123, 255, 0.2);
+        }
+        #result, #ai-result {
+            margin-top: 20px;
+            max-width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .upload-section {
+            margin-bottom: 20px;
+            max-width: 80%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .image-preview {
+            margin-top: 20px;
+            text-align: center;
+            max-width: 50%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .image-preview img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+        .ai-response {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 4px 16px rgba(45, 181, 93, 0.2);
+            color: #ffffff;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            text-align: left;
+            width: 100%;
+            animation: responseFadeIn 0.6s ease-out;
+        }
+        .ai-response h5 {
+            color: #2db55d;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        @keyframes responseFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @media (max-width: 768px) {
+            .logo-container {
+                left: 15px;
+            }
+            .logo-container img {
+                width: 120px;
+            }
+            .navbar {
+                padding: 8px 20px;
+                padding-left: 140px;
+                min-height: 50px;
+            }
+            .main-container, .ai-assistance-section {
+                padding-top: 60px;
+                flex-direction: column;
+                margin: 8px;
+                padding: 8px;
+            }
+            .plant-column {
+                gap: 15px;
+            }
+            .plant-card {
+                height: 100px;
+            }
+            .plant-card-overlay {
+                padding: 4px;
+            }
+            .plant-card-overlay h5 {
+                font-size: 12px;
+            }
+            .left-section {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                max-height: 40vh;
+            }
+            .right-section, .ai-assistance-content {
+                width: 100%;
+                padding: 20px 10px;
+            }
+            .image-preview, #result, #ai-result, .upload-section {
+                max-width: 100%;
+            }
+            .ai-response {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <!-- Logo Container -->
+        <div class="logo-container">
+            <a href="/">
+                <img src="https://media-hosting.imagekit.io/28f24fe2ed7e41b4/plant_ai-removebg-preview.png?Expires=1840454328&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=lI5xWwi5AqwJEHAvOCIK8H~NEQk4fvjLwewlFhKmiNJ8Bfst~Q0YaO1HyFu9nU-s7xJzu~6IdcVm4~NTyQ0Ox8Im5y4m73WLusMC5WnvxUaG5Cx9lebGQJV0rrpRcXxKBPjEnaSiq1IAJOOiIresfRoa0vnra3lDgUbNyAbFUdW5NdNKtzlvzvi6tqtWsOH0GVZM-wf7RHLmdBCmbaGZo~i~BLJKLP6E6K5QywykoYA~zWrNxyA-4MQb6Ps7lI3ZZrRMW2KTm4F~pjKOS9WWTFmO70~RYMThCm~ahDjduG1bPtj46jSgZFW-~6TZ4iYuc9HKUFg0M1j34R2457vG9g__" alt="Plant Disease Detector Logo">
+            </a>
+        </div>
+
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#"></a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="/detector" id="detectorTab">Detector</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="aiAssistanceTab">AI Assistance</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#about">About Project</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#contact">Contact</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Detector Section -->
+    <div class="main-container" id="detectorSection">
+        <!-- Left Section: Plant Selection -->
+        <div class="left-section">
+            <h4>Select Plant Type</h4>
+            <div class="plant-column" id="plantCards">
+                <!-- 8 plant sections matching MODELS keys -->
+                <a href="/plant/apple" class="plant-link" style="--index: 1;">
+                    <div class="plant-card plant-card-apple" data-plant="apple">
+                        <div class="plant-card-overlay">
+                            <h5>Apple</h5>
+                        </div>
+                    </div>
+                </a>
+                <a href="/plant/cherry" class="plant-link" style="--index: 2;">
+                    <div class="plant-card plant-card-cherry" data-plant="cherry">
+                        <div class="plant-card-overlay">
+                            <h5>Cherry</h5>
+                        </div>
+                    </div>
+                </a>
+                <a href="/plant/corn" class="plant-link" style="--index: 3;">
+                    <div class="plant-card plant-card-corn" data-plant="corn">
+                        <div class="plant-card-overlay">
+                            <h5>Corn</h5>
+                        </div>
+                    </div>
+                </a>
+                <a href="/plant/grape" class="plant-link" style="--index: 4;">
+                    <div class="plant-card plant-card-grape" data-plant="grape">
+                        <div class="plant-card-overlay">
+                            <h5>Grape</h5>
+                        </div>
+                    </div>
+                </a>
+                <a href="/plant/peach" class="plant-link" style="--index: 5;">
+                    <div class="plant-card plant-card-peach" data-plant="peach">
+                        <div class="plant-card-overlay">
+                            <h5>Peach</h5>
+                        </div>
+                    </div>
+                </a>
+                <a href="/plant/pepper" class="plant-link" style="--index: 6;">
+                    <div class="plant-card plant-card-pepper" data-plant="pepper">
+                        <div class="plant-card-overlay">
+                            <h5>Pepper</h5>
+                        </div>
+                    </div>
+                </a>
+                <a href="/plant/potato" class="plant-link" style="--index: 7;">
+                    <div class="plant-card plant-card-potato" data-plant="potato">
+                        <div class="plant-card-overlay">
+                            <h5>Potato</h5>
+                        </div>
+                    </div>
+                </a>
+                <a href="/plant/strawberry" class="plant-link" style="--index: 8;">
+                    <div class="plant-card plant-card-strawberry" data-plant="strawberry">
+                        <div class="plant-card-overlay">
+                            <h5>Strawberry</h5>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+        <!-- Right Section: Upload and Results -->
+        <div class="right-section">
+            <!-- Upload Section -->
+            <div class="upload-section">
+                <h4>Upload Image</h4>
+                <form id="predictionForm" enctype="multipart/form-data">
+                    <input type="hidden" id="selectedPlant" name="plant" value="">
+                    <div class="mb-3">
+                        <label for="imageInput" class="form-label">Upload Plant Image</label>
+                        <input type="file" class="form-control" id="imageInput" name="file" accept="image/*" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Predict Disease</button>
+                </form>
+                <!-- Image Preview -->
+                <div class="image-preview">
+                    <img id="previewImage" alt="Uploaded Image Preview">
+                </div>
+            </div>
+            <!-- Results Section -->
+            <div id="result">
+                <div id="resultHeader" style="display: none;">
+                    <h4>Prediction Results</h4>
+                </div>
+                <div id="loading" class="alert alert-info mt-3" role="alert" style="display: none;">
+                    Predicting...
+                </div>
+                <div id="error" class="alert alert-danger mt-3" role="alert" style="display: none;">
+                </div>
+                <div id="success" class="alert alert-success mt-3" role="alert" style="display: none;">
+                    <h4 class="alert-heading">Prediction Result</h4>
+                    <p><strong>Predicted Disease:</strong> <span id="predictedClass"></span></p>
+                    <p><strong>Confidence:</strong> <span id="confidence"></span></p>
+                    <h5>All Probabilities:</h5>
+                    <ul id="allPredictions"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Assistance Section -->
+    <div class="ai-assistance-section hidden" id="aiAssistanceSection">
+        <div class="ai-assistance-content">
+            <h4>AI Assistance</h4>
+            <form id="aiAssistanceForm">
+                <div class="mb-3">
+                    <label for="aiInput" class="form-label">Ask about plant diseases or care</label>
+                    <textarea class="form-control ai-input" id="aiInput" rows="4" placeholder="e.g., How to treat powdery mildew on grapes?" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Get Assistance</button>
+            </form>
+            <div id="ai-result">
+                <div id="aiLoading" class="alert alert-info mt-3" role="alert" style="display: none;">
+                    Fetching response...
+                </div>
+                <div id="aiError" class="alert alert-danger mt-3" role="alert" style="display: none;">
+                </div>
+                <div id="aiSuccess" class="ai-response" style="display: none;">
+                    <h5>AI Response:</h5>
+                    <p id="aiResponse"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            let selectedPlant = null;
+
+            // Add --index for plant cards
+            $('.plant-link').each(function(index) {
+                $(this).css('--index', index + 1);
+            });
+
+            // Show Detector section by default
+            $('#detectorSection').removeClass('hidden').show();
+            $('#aiAssistanceSection').hide();
+
+            // Handle navbar tab switching with animation
+            $('#detectorTab').on('click', function(e) {
+                e.preventDefault();
+                $('.nav-link').removeClass('active');
+                $(this).addClass('active');
+                $('#aiAssistanceSection').addClass('hidden').hide();
+                $('#detectorSection').removeClass('hidden').show();
+            });
+
+            $('#aiAssistanceTab').on('click', function(e) {
+                e.preventDefault();
+                $('.nav-link').removeClass('active');
+                $(this).addClass('active');
+                $('#detectorSection').addClass('hidden').hide();
+                $('#aiAssistanceSection').removeClass('hidden').show();
+            });
+
+            // Handle image preview
+            $('#imageInput').on('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        $('#previewImage').attr('src', e.target.result).css('display', 'block');
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    $('#previewImage').attr('src', '').css('display', 'none');
+                }
+            });
+
+            // Handle plant card selection
+            $('.plant-card').on('click', function(e) {
+                e.preventDefault();
+                $('.plant-card').removeClass('selected');
+                $(this).addClass('selected');
+                selectedPlant = $(this).data('plant');
+                $('#selectedPlant').val(selectedPlant);
+                console.log('Selected plant:', selectedPlant);
+            });
+
+            // Handle prediction form submission
+            $('#predictionForm').on('submit', function(e) {
+                e.preventDefault();
+
+                if (!selectedPlant) {
+                    $('#loading').hide();
+                    $('#error').text('Please select a plant type.').show();
+                    return;
+                }
+
+                $('#resultHeader').hide();
+                $('#loading').hide();
+                $('#error').hide();
+                $('#success').hide();
+                $('#predictedClass').text('');
+                $('#confidence').text('');
+                $('#allPredictions').empty();
+
+                $('#loading').show();
+
+                let formData = new FormData(this);
+
+                $.ajax({
+                    url: '/predict',
+                    type: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function(response) {
+                        $('#loading').hide();
+                        if (response.error) {
+                            $('#error').text(response.error).show();
+                        } else {
+                            $('#resultHeader').show();
+                            $('#predictedClass').text(response.class);
+                            $('#confidence').text((response.confidence * 100).toFixed(2) + '%');
+                            for (let [cls, prob] of Object.entries(response.all_predictions)) {
+                                $('#allPredictions').append(`<li>${cls}: ${(prob * 100).toFixed(2)}%</li>`);
+                            }
+                            $('#success').show();
+                        }
+                    },
+                    error: function() {
+                        $('#loading').hide();
+                        $('#error').text('An error occurred while processing your request.').show();
+                    }
+                });
+            });
+
+            // Handle AI assistance form submission
+            $('#aiAssistanceForm').on('submit', function(e) {
+                e.preventDefault();
+
+                $('#aiLoading').hide();
+                $('#aiError').hide();
+                $('#aiSuccess').hide();
+                $('#aiResponse').text('');
+
+                $('#aiLoading').show();
+
+                let userInput = $('#aiInput').val();
+
+                $.ajax({
+                    url: '/ai-assistance',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ query: userInput }),
+                    success: function(response) {
+                        $('#aiLoading').hide();
+                        if (response.error) {
+                            $('#aiError').text(response.error).show();
+                        } else {
+                            $('#aiResponse').text(response.response);
+                            $('#aiSuccess').show();
+                        }
+                    },
+                    error: function() {
+                        $('#aiLoading').hide();
+                        $('#aiError').text('An error occurred while fetching the AI response.').show();
+                    }
+                });
+            });
+
+            // Add scroll effect for header
+            $(window).on('scroll', function() {
+                if ($(window).scrollTop() > 50) {
+                    $('header').addClass('scrolled');
+                } else {
+                    $('header').removeClass('scrolled');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
